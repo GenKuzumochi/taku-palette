@@ -10,7 +10,7 @@ function handleValueChange<T>(handler: (value: T) => void) {
 }
 
 function createMar(data: any, url: string): CharacterClipboardData {
-    const p = createMarPallette(data)
+    const p = createMarPalette(data)
     const [_, name] = data.base.name.match(/(.+?)[\(（]/) ?? [, data.base.name]
     console.log(data)
     return {
@@ -32,7 +32,7 @@ function createMar(data: any, url: string): CharacterClipboardData {
     }
 }
 
-function createMarPallette(data: any) {
+function createMarPalette(data: any) {
     const skills = data.skills.map((s: any) => {
         const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? []
         let res = `${s.name ?? ""} / ${s["class"] ?? ""} / ${s.type ?? ""} / ${s.target ?? ""} / ${s.timing ?? ""} / ${s.range ?? ""} / ${s.cost ?? ""} / ${s.memo ?? ""}`
