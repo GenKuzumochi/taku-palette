@@ -15,6 +15,7 @@ export default async function handler(
 ) {
     const src = req.query.src;
     try {
+        if(!src) throw "Invalid src";
         const s = new URL(Array.isArray(src) ? src[0] : src);
         if (s.host !== "yutorize.2-d.jp") {
             throw "Bad url";

@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Script from 'next/script'
 import { Loader } from '../component/Loader'
 import styles from '../styles/Home.module.css'
+import {css} from "@emotion/react";
 
 const Home: NextPage = () => {
   return (
@@ -15,11 +16,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <h3 css={css`text-align: center;`}>たくぱれっと</h3>
       <main className={styles.main}>
-        <H3>たくぱれっと</H3>
         <Loader />
-
-
       </main>
 
       <footer className={styles.footer}>
