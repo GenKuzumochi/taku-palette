@@ -9,3 +9,8 @@ export function getMar(url: string) {
     })
 }
 
+export async function getYtsheetDx(url: string) {
+    const u = new URL(url)
+    u.searchParams.set("mode", "json")
+    return await fetch("/api/ytsheet?src=" + decodeURIComponent(u.href)).then(x => x.json())
+}
