@@ -1,10 +1,14 @@
+import { kMaxLength } from "buffer";
 import jQuery from "jquery";
-import {CharacterClipboardData} from "./ccfolia";
-import {zenkana2hankana} from "./utils";
+import { Character, CharacterClipboardData, Status } from "./ccfolia";
+import { zenkana2hankana } from "./utils";
+import * as Mar from "./marType"
+
+
 
 const heroforce: { [key: string]: string } = {
     "エクステンション":
-        "単体/本文/対象が行う攻撃の対象を「範囲（選択）」に変更する。/変更後の対象を「場面（選択）」に変更し、さらに「射程：視界」に変更する。",
+        "単体/本文/対象が行う攻撃の対象を「範囲（選択）」に変更する。もともと「範囲（選択）」「範囲」の場合には「対象：場面（選択）」「射程：視界」に変更する。/変更後の対象を「場面（選択）」に変更し、さらに「射程：視界」に変更する。",
     "グレイトサクセス":
         "単体/判定直後/メジャーアクションの判定をクリティカルにする。/使用した判定にリアクションは行えない。",
     "スーパーアタック":
@@ -44,43 +48,80 @@ export function getMar(url: string) {
     })
 }
 
-function createArmors(data: any) {
+function createArmors(data: Mar.MarCharacter) {
     const x = data.armourstotal;
     return `斬${x.slash}/刺${x.pierce}/殴${x.crash}/炎${x.fire}/氷${x.ice}/電${x.thunder}/光${x.light}/闇${x.dark}`
 }
 
-export function createMar(data: any, url: string): { commands: string, koma: string } {
-    const p = createMarPalette(data)
+export function createMar(data: Mar.MarCharacter, url: string, noPassive: boolean): { commands: string, koma: string } {
+    const p = createMarPalette(data, noPassive)
+    const st = getStatusCommand(data.skills)
     const [_, name] = data.base.name.match(/(.+?)[\(（]/) ?? [, data.base.name]
-    const obj = {
+    const obj: CharacterClipboardData = {
         kind: "character",
         data: {
             name,
-            memo: `${data.base.name ?? ""} ${data.base.nameKana ? `(${data.base.nameKana})` : ""}\n\n` + createArmors(data),
+            memo: `${data.base.name ?? ""} ${data.base.nameKana ? `(${data.base.nameKana})` : ""}\nPL:${data.base.player}\n\n` + createArmors(data),
             commands: p,
             externalUrl: url,
             initiative: parseInt(data.outfits.total.action),
             status: [
-                {label: "FP", max: parseInt(data.outfits.total.fp, 10), value: parseInt(data.outfits.total.fp, 10)},
-                {label: "HP", max: parseInt(data.outfits.total.hp, 10), value: parseInt(data.outfits.total.hp, 10)},
-                {label: "MP", max: parseInt(data.outfits.total.mp, 10), value: parseInt(data.outfits.total.mp, 10)}
-            ].concat(data.specials.map((x: any) => ({label: zenkana2hankana(x.name), max: 0, value: 1})))
+                { label: "FP", max: parseInt(data.outfits.total.fp, 10), value: parseInt(data.outfits.total.fp, 10) },
+                { label: "HP", max: parseInt(data.outfits.total.hp, 10), value: parseInt(data.outfits.total.hp, 10) },
+                { label: "MP", max: parseInt(data.outfits.total.mp, 10), value: parseInt(data.outfits.total.mp, 10) }
+            ].concat(data.specials.map((x: any) => ({ label: zenkana2hankana(x.name), max: 0, value: 1 })), [{ label: "財産点", max: parseInt(data.addfortunepoint, 10), value: parseInt(data.addfortunepoint, 10) }], st)
         }
     }
 
-    return {commands: obj.data.commands, koma: JSON.stringify(obj)}
+    return { commands: obj.data.commands!, koma: JSON.stringify(obj) }
 }
 
+type S = {
 
-export function createMarPalette(data: any) {
-    const skills = data.skills.map((s: any) => {
-        const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? []
-        let res = `${s.name ?? ""} / ${s["class"] ?? ""} / ${s.type ?? ""} / ${s.target ?? ""} / ${s.timing ?? ""} / ${s.range ?? ""} / ${s.cost ?? ""} / ${s.memo ?? ""}`
-        if (val && tan) {
-            res += `\n:${tan.toUpperCase()}-${val} ${s.name}`
+}
+
+function getStatusCommand(skills: Mar.Skill[]): Status[] {
+    const res = []
+    for( const skill of skills) {
+        for (const l of (skill.memo?.split("\n") ?? [] )) {
+            let [,value, max, label] = l.match(/^;(\d+)\/(\d+)\s*(.*)$/) ?? [];
+            if (value) {
+                if(label == null || label === "") label = skill.name;
+                res.push({ value: parseInt(value, 10), max: parseInt(max, 10), label })
+            } else {
+                const [, max] = l.match(/;1?シーン(\d+)/) ?? l.match(/;1?ラウンド(\d+)/) ?? l.match(/;1?R(\d+)/) ?? l.match(";1?シナリオ(\d+)") ?? []
+                if(!max) continue;
+                res.push({value:parseInt(max,10), max:parseInt(max,10), label:skill.name})
+            }
+        }
+    }
+    return res;
+}
+function getL(str: string | null): string {
+    return str?.split("\n").filter(x => !x.startsWith(";")).join("\\n").replaceAll(";\\n","\n").trim() ?? ""
+}
+
+export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
+    const skills = data.skills.map(s => {
+        const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? [];
+        let res = "";
+        if (noPassive && s.timing === "常時") {
+            res += s.memo.split("\n").filter(l => l.startsWith("//")).join("\n")
+        }
+        else {
+            const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}",`{${s["class"]}CL}`))}`
+            if (line !== " /  /  /  /  /  /  / ") {
+                res += line;
+            }
+            if (val && tan) {
+                res += `\n:${tan.toUpperCase()}-${val} ${getL(s.name)} ${getL(s.timing)}`
+            }
         }
         return res
-    }).join("\n")
+    }).filter(x => x !== "").join("\n")
+
+    const classes: [string, number][] = data.classes.map(c => ([c.nametext ?? c.name, parseInt(c.level, 10)]))
+
     return `//体力=${data.abl.strong.dispbonus}
 //反射=${data.abl.reflex.dispbonus}
 //知覚=${data.abl.sense.dispbonus}
@@ -92,6 +133,7 @@ export function createMarPalette(data: any) {
 //心魂=${data.outfits.total.magic}
 //魂魄=${data.outfits.total.countermagic}
 //行動=${data.outfits.total.action}
+${classes.map(([name, level]) => `//${name}CL=${level}`).join("\n")}
 2d+{体力}[] 体力
 2d+{反射}[] 反射
 2d+{知覚}[] 知覚
@@ -102,6 +144,7 @@ export function createMarPalette(data: any) {
 2d+{回避}[] 回避
 2d+{心魂}[] 心魂
 2d+{魂魄}[] 魂魄
+${data.base.level}D6 舞台裏回復
 //---特技
 ${skills}
 //---ヒーローフォース
