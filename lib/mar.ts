@@ -98,7 +98,7 @@ function getStatusCommand(skills: Mar.Skill[]): Status[] {
     return res;
 }
 function getL(str: string | null): string {
-    return str?.split("\n").filter(x => !x.startsWith(";")).join("\\n").replaceAll(";\\n","\n").trim() ?? ""
+    return str?.split("\n").filter(x => !x.startsWith(";")).join("\\n").replaceAll(";\\n","\n").replaceAll("\\n\\n","\n").trim() ?? ""
 }
 
 export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
