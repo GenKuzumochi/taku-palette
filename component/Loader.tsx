@@ -6,6 +6,7 @@ import {createYtsheetDx, getYtsheetDx} from "../lib/dx3";
 import {AppToaster, zenkana2hankana} from "../lib/utils";
 import {createMar, createMarPalette, getMar} from "../lib/mar";
 import {css} from "@emotion/react";
+import { MarCharacter } from "../lib/marType";
 
 function handleValueChange<T>(handler: (value: T) => void) {
     return (event: React.FormEvent<HTMLElement>) => handler(((event.target as HTMLInputElement).value as unknown) as T);
@@ -15,7 +16,7 @@ function handleValueChange<T>(handler: (value: T) => void) {
 
 async function loadData(url: string, noPassive: boolean) : Promise<{koma:string,commands:string}> {
     if (url.startsWith("https://character-sheets.appspot.com/mar/" || url.startsWith("http://www.character-sheets.appspot.com/"))) {
-        return getMar(url).then(json => createMar(json, url,noPassive))
+        return getMar(url).then(json => createMar(json as MarCharacter, url,noPassive))
     }else if(url.startsWith("https://yutorize.2-d.jp/ytsheet/dx3rd/")) {
         return getYtsheetDx(url).then(json => createYtsheetDx(json, url))
     }
