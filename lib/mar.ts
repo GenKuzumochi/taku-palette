@@ -109,7 +109,7 @@ export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
             res += s.memo.split("\n").filter(l => l.startsWith("//")).join("\n")
         }
         else {
-            const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}",`{${s["class"]}CL}`))}`
+            const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}",`{${s["class"] ?? ""}CL}`))}`
             if (line !== " /  /  /  /  /  /  / ") {
                 res += line;
             }

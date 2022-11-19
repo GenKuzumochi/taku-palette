@@ -15,7 +15,7 @@ function handleValueChange<T>(handler: (value: T) => void) {
 
 
 async function loadData(url: string, noPassive: boolean) : Promise<{koma:string,commands:string}> {
-    if (url.startsWith("https://character-sheets.appspot.com/mar/" || url.startsWith("http://www.character-sheets.appspot.com/"))) {
+    if (url.startsWith("https://character-sheets.appspot.com/mar/") || url.startsWith("http://www.character-sheets.appspot.com/mar/")) {
         return getMar(url).then(json => createMar(json as MarCharacter, url,noPassive))
     }else if(url.startsWith("https://yutorize.2-d.jp/ytsheet/dx3rd/")) {
         return getYtsheetDx(url).then(json => createYtsheetDx(json, url))
