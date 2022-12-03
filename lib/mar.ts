@@ -53,8 +53,26 @@ function createArmors(data: Mar.MarCharacter) {
     return `斬${x.slash}/刺${x.pierce}/殴${x.crash}/炎${x.fire}/氷${x.ice}/電${x.thunder}/光${x.light}/闇${x.dark}`
 }
 
-export function createMar(data: Mar.MarCharacter, url: string, noPassive: boolean): { commands: string, koma: string } {
-    const p = createMarPalette(data, noPassive)
+export function createMarParams(data: Mar.MarCharacter) {
+    const classes: [string, number][] = data.classes.map(c => ([c.nametext ?? c.name, parseInt(c.level, 10)]))
+    const res = []
+    res.push({ label: "体力", value: data.abl.strong.dispbonus },
+        { label: "反射", value: data.abl.reflex.dispbonus },
+        { label: "知覚", value: data.abl.sense.dispbonus },
+        { label: "理知", value: data.abl.intellect.dispbonus },
+        { label: "意志", value: data.abl.will.dispbonus },
+        { label: "幸運", value: data.abl.bllesing.dispbonus },
+        { label: "命中", value: data.outfits.total.hit },
+        { label: "回避", value: data.outfits.total.dodge },
+        { label: "心魂", value: data.outfits.total.magic },
+        { label: "魂魄", value: data.outfits.total.countermagic },
+        { label: "行動", value: data.outfits.total.action })
+    res.push(...classes.map(([name, level]) => ({ label: name + "CL", value: String(level) })))
+    return res;
+}
+
+export function createMar(data: Mar.MarCharacter, url: string, marOpt : MarOption): { commands: string, koma: string } {
+    const p = createMarPalette(data, marOpt)
     const st = getStatusCommand(data.skills)
     const [_, name] = data.base.name.match(/(.+?)[\(（]/) ?? [, data.base.name]
     const obj: CharacterClipboardData = {
@@ -65,6 +83,7 @@ export function createMar(data: Mar.MarCharacter, url: string, noPassive: boolea
             commands: p,
             externalUrl: url,
             initiative: parseInt(data.outfits.total.action),
+            params: createMarParams(data),
             status: [
                 { label: "FP", max: parseInt(data.outfits.total.fp, 10), value: parseInt(data.outfits.total.fp, 10) },
                 { label: "HP", max: parseInt(data.outfits.total.hp, 10), value: parseInt(data.outfits.total.hp, 10) },
@@ -82,26 +101,31 @@ type S = {
 
 function getStatusCommand(skills: Mar.Skill[]): Status[] {
     const res = []
-    for( const skill of skills) {
-        for (const l of (skill.memo?.split("\n") ?? [] )) {
-            let [,value, max, label] = l.match(/^;(\d+)\/(\d+)\s*(.*)$/) ?? [];
+    for (const skill of skills) {
+        for (const l of (skill.memo?.split("\n") ?? [])) {
+            let [, value, max, label] = l.match(/^;(\d+)\/(\d+)\s*(.*)$/) ?? [];
             if (value) {
-                if(label == null || label === "") label = skill.name;
+                if (label == null || label === "") label = skill.name;
                 res.push({ value: parseInt(value, 10), max: parseInt(max, 10), label })
             } else {
                 const [, max] = l.match(/;1?シーン(\d+)/) ?? l.match(/;1?ラウンド(\d+)/) ?? l.match(/;1?R(\d+)/) ?? l.match(";1?シナリオ(\d+)") ?? []
-                if(!max) continue;
-                res.push({value:parseInt(max,10), max:parseInt(max,10), label:skill.name})
+                if (!max) continue;
+                res.push({ value: parseInt(max, 10), max: parseInt(max, 10), label: skill.name })
             }
         }
     }
     return res;
 }
 function getL(str: string | null): string {
-    return str?.split("\n").filter(x => !x.startsWith(";")).join("\\n").replaceAll(";\\n","\n").replaceAll("\\n\\n","\n").trim() ?? ""
+    return str?.split("\n").filter(x => !x.startsWith(";")).join("\\n").replaceAll(";\\n", "\n").replaceAll("\\n\\n", "\n").trim() ?? ""
 }
 
-export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
+export type MarOption = Partial<{
+    noPassive: boolean;
+    slashStatus: boolean;
+}>
+
+export function createMarPalette(data: Mar.MarCharacter, { noPassive, slashStatus }: MarOption) {
     const skills = data.skills.map(s => {
         const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? [];
         let res = "";
@@ -109,7 +133,7 @@ export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
             res += s.memo.split("\n").filter(l => l.startsWith("//")).join("\n")
         }
         else {
-            const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}",`{${s["class"] ?? ""}CL}`))}`
+            const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}", `{${s["class"] ?? ""}CL}`))}`
             if (line !== " /  /  /  /  /  /  / ") {
                 res += line;
             }
@@ -122,7 +146,8 @@ export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
 
     const classes: [string, number][] = data.classes.map(c => ([c.nametext ?? c.name, parseInt(c.level, 10)]))
 
-    return `//体力=${data.abl.strong.dispbonus}
+    let res = "";
+    if (slashStatus) res += `//体力=${data.abl.strong.dispbonus}
 //反射=${data.abl.reflex.dispbonus}
 //知覚=${data.abl.sense.dispbonus}
 //理知=${data.abl.intellect.dispbonus}
@@ -134,7 +159,8 @@ export function createMarPalette(data: Mar.MarCharacter, noPassive: boolean) {
 //魂魄=${data.outfits.total.countermagic}
 //行動=${data.outfits.total.action}
 ${classes.map(([name, level]) => `//${name}CL=${level}`).join("\n")}
-2d+{体力}[] 体力
+`
+    res += `2d+{体力}[] 体力
 2d+{反射}[] 反射
 2d+{知覚}[] 知覚
 2d+{理知}[] 理知
@@ -150,4 +176,5 @@ ${skills}
 //---ヒーローフォース
 ${data.specials.map((x: { name: string }) => x.name + " " + heroforce[x.name]).join("\n")}
 `
+    return res;
 }
