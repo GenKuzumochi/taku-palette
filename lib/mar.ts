@@ -7,6 +7,7 @@ import * as Mar from "./marType"
 
 
 const heroforce: { [key: string]: string } = {
+    "":"",
     "エクステンション":
         "単体/本文/対象が行う攻撃の対象を「範囲（選択）」に変更する。もともと「範囲（選択）」「範囲」の場合には「対象：場面（選択）」「射程：視界」に変更する。/変更後の対象を「場面（選択）」に変更し、さらに「射程：視界」に変更する。",
     "グレイトサクセス":
@@ -130,7 +131,7 @@ export function createMarPalette(data: Mar.MarCharacter, { noPassive, slashStatu
         const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? [];
         let res = "";
         if (noPassive && s.timing === "常時") {
-            res += s.memo.split("\n").filter(l => l.startsWith("//")).join("\n")
+            res += s.memo?.split("\n").filter(l => l.startsWith("//")).join("\n")
         }
         else {
             const line = `${getL(s.name)} / ${getL(s["class"])} / ${getL(s.type)} / ${getL(s.target)} / ${getL(s.timing)} / ${getL(s.range)} / ${getL(s.cost)} / ${getL(s.memo?.replaceAll("{CL}", `{${s["class"] ?? ""}CL}`))}`
@@ -157,7 +158,6 @@ export function createMarPalette(data: Mar.MarCharacter, { noPassive, slashStatu
 //回避=${data.outfits.total.dodge}
 //心魂=${data.outfits.total.magic}
 //魂魄=${data.outfits.total.countermagic}
-//行動=${data.outfits.total.action}
 ${classes.map(([name, level]) => `//${name}CL=${level}`).join("\n")}
 `
     res += `2d+{体力}[] 体力
@@ -174,7 +174,7 @@ ${data.base.level}D6 舞台裏回復
 //---特技
 ${skills}
 //---ヒーローフォース
-${data.specials.map((x: { name: string }) => x.name + " " + heroforce[x.name]).join("\n")}
+${data.specials.map((x: { name?: string }) => x?.name + " " + heroforce[x?.name ?? ""]).join("\n")}
 `
     return res;
 }

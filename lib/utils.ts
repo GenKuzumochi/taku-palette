@@ -23,7 +23,8 @@ const kanaMap : {[key:string]:string} = {
     "゛": "ﾞ", "゜":"ﾟ"
 }
 const reg = new RegExp('(' + Object.keys(kanaMap).join('|') + ')', 'g');
-export function zenkana2hankana(str: string) {
+export function zenkana2hankana(str?: string) {
+    if(!str) return "";
     return str.replace(reg, x => (kanaMap[x] ?? x))
 };
 

@@ -33,7 +33,7 @@ export const Loader = () => {
         loadData(url,{noPassive, slashStatus: false}).then(data => {
                 if (ref1.current) ref1.current.value = data.koma || ""
             }
-        ).catch(x => alert("エラー\n\n" + x))
+        ).catch(x => { console.error(x); alert("エラー\n\n" + x ) })
     }
     const handleLoad = (_: any) => {
         loadData(url,{noPassive,slashStatus:true}).then(data => {
@@ -44,7 +44,8 @@ export const Loader = () => {
     const handleCopy = (_: any) => {
         navigator.clipboard.writeText(ref1.current?.value ?? "").then(x => {
             AppToaster?.show({message: "コピーしました"})
-        }).catch(x => alert("エラー\n\n" + x))
+        }
+        ).catch(x => { console.error(x); alert("エラー\n\n" + x ) })
     }
     return <Card  style={{width:"100%", maxWidth: "calc( 100% - 2rem)",margin: "1rem"}}>
         <H3>URLからチャパレを生成</H3>
