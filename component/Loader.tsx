@@ -65,6 +65,9 @@ export const Loader = () => {
         </div>
         <TextArea inputRef={ref1} style={{width: "100%", height: "10rem"}}/>
         <Button icon="clipboard" onClick={handleCopy}>Copy</Button>
+
+        <hr/>
+        
     </Card>
 }
 

@@ -22,7 +22,8 @@ const Home: NextPage = () => {
       </main>
 
       <footer className={styles.footer}>
-        powerd by GenKuzumochi
+        @GenKuzumochi
+        <a href="https://github.com/GenKuzumochi/taku-palette/releases">Release Note @GitHub</a>
       </footer>
     </div>
   )
