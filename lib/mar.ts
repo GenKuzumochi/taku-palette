@@ -126,9 +126,16 @@ export type MarOption = Partial<{
     slashStatus: boolean;
 }>
 
+function createCost( cost? :string ) : string | undefined {
+    if( !cost) return undefined;
+    const [_, val, tan] = cost.match(/(\d+)(MP|HP|FP)/i) ?? [];
+    if(!val || !tan) return undefined;
+    return `:${tan.toUpperCase()}-${val}`
+}
+
 export function createMarPalette(data: Mar.MarCharacter, { noPassive, slashStatus }: MarOption) {
     const skills = data.skills.map(s => {
-        const [_, val, tan] = s.cost?.match(/(\d+)(MP|HP|FP)/i) ?? [];
+        const costP = createCost(s?.cost);
         let res = "";
         if (noPassive && s.timing === "常時") {
             res += s.memo?.split("\n").filter(l => l.startsWith("//")).join("\n")
@@ -138,12 +145,21 @@ export function createMarPalette(data: Mar.MarCharacter, { noPassive, slashStatu
             if (line !== " /  /  /  /  /  /  / ") {
                 res += line;
             }
-            if (val && tan) {
-                res += `\n:${tan.toUpperCase()}-${val} ${getL(s.name)} ${getL(s.timing)}`
+            if (costP) {
+                res += `\n${costP} ${getL(s.name)} ${getL(s.timing)}`
             }
         }
         return res
     }).filter(x => x !== "").join("\n")
+
+    const wapon = data?.outfits?.main_weapon_short?.map( x => {
+        const str = createCost(x?.strong)
+        return `${str ?? "//(代償なし) "} ${x?.name}${x?.selected ? "[E]" : ""} ${x?.damagetype ?? ""} ${x?.range ?? ""}`
+    }).join("\n")
+    const wapon2 = data?.outfits?.sub_weapon_short?.map( x => {
+        const str = createCost(x?.strong)
+        return `${str ?? "//(代償なし) "} ${x?.name}${x?.selected ? "[E]" : ""} ${x?.damagetype ?? ""} ${x?.range ?? ""}`
+    }).join("\n")
 
     const classes: [string, number][] = data.classes.map(c => ([c.nametext ?? c.name, parseInt(c.level, 10)]))
 
@@ -171,6 +187,9 @@ ${classes.map(([name, level]) => `//${name}CL=${level}`).join("\n")}
 2d+{心魂}[] 心魂
 2d+{魂魄}[] 魂魄
 ${data.base.level}D6 舞台裏回復
+//---武器
+${wapon}
+${wapon2}
 //---特技
 ${skills}
 //---ヒーローフォース
