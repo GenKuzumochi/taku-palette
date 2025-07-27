@@ -22,7 +22,6 @@ export function createYtsheetDx(data: any, url: string) {
         const timing = data.value[`effect${i}Timing`] ?? "";
         const encroach = data.value[`effect${i}Encroach`] ?? "";
         str += `${name}/${lv}Lv/${timing}/${skill}/${fclty}/${range}/${target}/${encroach}/${restrict}/ ${note}\n`
-        str += {}
         str += `:侵蝕+${encroach} ${name}\n`
         if(!name) break;
     }
